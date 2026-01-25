@@ -1,5 +1,7 @@
 # remotion-video
 
+[中文文档](README_CN.md)
+
 A Claude Code Skill for creating programmatic videos with Remotion framework.
 
 ## Features
