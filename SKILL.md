@@ -1730,9 +1730,12 @@ for (let row = 0; row < size; row++) {
 {
   "scripts": {
     "dev": "remotion studio",
-    "audio": "python3 scripts/generate_audio.py",
+    "audio": "npx ts-node scripts/generate-audio.ts",
+    "audio:edge": "npx ts-node scripts/generate-audio.ts -p edge",
+    "audio:qwen": "npx ts-node scripts/generate-audio.ts -p qwen",
     "render": "remotion render MyVideo out/video.mp4",
-    "build": "npm run audio && npm run render"
+    "build": "npm run audio && npm run render",
+    "check-env": "bash scripts/check-env.sh"
   }
 }
 ```
