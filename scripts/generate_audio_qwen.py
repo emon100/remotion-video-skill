@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 """
-MiniMax TTS 音频生成脚本（支持断点续作）
+Qwen TTS (CosyVoice) 音频生成脚本（支持断点续作）
 
 特性：
+- 使用阿里云 DashScope CosyVoice 模型
+- 支持多种中文音色，包括声音克隆
 - 检测已存在的音频文件，自动跳过
 - 实时显示生成进度
-- 生成失败时保留已完成的部分
 - 自动更新 Remotion 配置文件
 
 用法：
     # 推荐：使用公共虚拟环境
-    source ~/.claude/envs/remotion-tts/bin/activate && python scripts/generate_audio_minimax.py
+    source ~/.claude/envs/remotion-tts/bin/activate && python scripts/generate_audio_qwen.py
 
     # 或通过 npm script
-    npm run audio:minimax
+    npm run audio:qwen
 
 环境变量：
-    MINIMAX_API_KEY: MiniMax API 密钥
-    MINIMAX_VOICE_ID: 克隆音色 ID
+    DASHSCOPE_API_KEY: 阿里云 DashScope API 密钥
+    QWEN_VOICE: 音色 ID（可选，默认 longfei）
 
 首次配置公共环境：
     python3 -m venv ~/.claude/envs/remotion-tts
@@ -26,17 +27,41 @@ MiniMax TTS 音频生成脚本（支持断点续作）
 """
 
 import os
-import requests
 import subprocess
 from pathlib import Path
 
-# 从环境变量读取配置（推荐）
-API_KEY = os.environ.get("MINIMAX_API_KEY")
-VOICE_ID = os.environ.get("MINIMAX_VOICE_ID")
-
-if not API_KEY or not VOICE_ID:
-    print("❌ 错误: 请设置 MINIMAX_API_KEY 和 MINIMAX_VOICE_ID 环境变量")
+try:
+    import dashscope
+    from dashscope.audio.tts_v2 import SpeechSynthesizer
+except ImportError:
+    print("❌ 请先安装 dashscope: pip install dashscope")
     exit(1)
+
+# 从环境变量读取配置
+API_KEY = os.environ.get("DASHSCOPE_API_KEY")
+if not API_KEY:
+    print("❌ 错误: 请设置 DASHSCOPE_API_KEY 环境变量")
+    print("   获取方式: https://dashscope.console.aliyun.com/apiKey")
+    exit(1)
+
+dashscope.api_key = API_KEY
+
+# 音色配置
+# 预置音色列表: https://help.aliyun.com/zh/model-studio/developer-reference/cosyvoice-quick-start
+# - longxiaochun: 龙小淳（温柔女声）
+# - longxiaoxia: 龙小夏（甜美女声）
+# - longlaotie: 龙老铁（东北老铁）
+# - longshu: 龙叔（成熟男声）
+# - longwan: 龙婉（知性女声）
+# - longyue: 龙悦（活泼女声）
+# - longfei: 龙飞（专业男声，推荐）
+# - longjielidou: 龙杰力豆（活力男声）
+VOICE = os.environ.get("QWEN_VOICE", "longfei")
+
+# 模型选择
+# - cosyvoice-v1: 标准版
+# - cosyvoice-v2: 增强版（推荐）
+MODEL = "cosyvoice-v2"
 
 # 场景配置 - 每个场景包含 id、title、text
 SCENES = [
@@ -61,45 +86,41 @@ def get_audio_duration(file_path: Path) -> float:
 
 
 def generate_audio(scene: dict) -> dict:
-    """使用 MiniMax API 生成音频"""
-    url = "https://api.minimax.io/v1/t2a_v2"  # 国际版
-    # url = "https://api.minimaxi.com/v1/t2a_v2"  # 国内版
+    """使用 DashScope CosyVoice 生成音频"""
+    output_file = OUTPUT_DIR / f"{scene['id']}.mp3"
 
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json",
+    synthesizer = SpeechSynthesizer(
+        model=MODEL,
+        voice=VOICE,
+        format="mp3",
+    )
+
+    # 合成音频
+    audio_data = synthesizer.call(scene["text"])
+
+    if audio_data is None:
+        raise Exception("音频生成失败，返回为空")
+
+    # 保存文件
+    output_file.write_bytes(audio_data)
+
+    # 获取时长
+    duration = get_audio_duration(output_file)
+    frames = round(duration * 30)  # 30fps
+
+    return {
+        "id": scene["id"],
+        "title": scene["title"],
+        "file": f"{scene['id']}.mp3",
+        "duration": duration,
+        "frames": frames
     }
-
-    payload = {
-        "model": "speech-02-hd",
-        "text": scene["text"],
-        "stream": False,
-        "voice_setting": {"voice_id": VOICE_ID, "speed": 1.0, "vol": 1.0, "pitch": 0},
-        "audio_setting": {"sample_rate": 32000, "bitrate": 128000, "format": "mp3", "channel": 1},
-    }
-
-    response = requests.post(url, headers=headers, json=payload, timeout=60)
-    result = response.json()
-
-    if "data" in result and "audio" in result["data"]:
-        audio_data = bytes.fromhex(result["data"]["audio"])
-        output_file = OUTPUT_DIR / f"{scene['id']}.mp3"
-        output_file.write_bytes(audio_data)
-
-        duration = result.get("extra_info", {}).get("audio_length", 0) / 1000
-        if duration == 0:
-            duration = get_audio_duration(output_file)
-
-        return {"id": scene["id"], "title": scene["title"], "file": f"{scene['id']}.mp3", "duration": duration, "frames": round(duration * 30)}
-    else:
-        error = result.get("base_resp", {}).get("status_msg", str(result))
-        raise Exception(f"API 错误: {error}")
 
 
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    print(f"🎙️  MiniMax TTS (Voice: {VOICE_ID[:20]}...)")
+    print(f"🎙️  Qwen TTS (Model: {MODEL}, Voice: {VOICE})")
     print(f"📁 输出目录: {OUTPUT_DIR}")
     print("=" * 60)
 
@@ -115,7 +136,13 @@ def main():
         if output_file.exists() and output_file.stat().st_size > 0:
             duration = get_audio_duration(output_file)
             frames = round(duration * 30)
-            results.append({"id": scene["id"], "title": scene["title"], "file": f"{scene['id']}.mp3", "duration": duration, "frames": frames})
+            results.append({
+                "id": scene["id"],
+                "title": scene["title"],
+                "file": f"{scene['id']}.mp3",
+                "duration": duration,
+                "frames": frames
+            })
             print(f"{prefix}: ⏭️  已存在，跳过 ({duration:.2f}s)")
             skipped += 1
             continue
@@ -141,10 +168,9 @@ def main():
 
 
 def update_config(results):
-    """更新 audioConfig.ts - 注意：必须用真正的换行符，不能用字符串 \\n"""
+    """更新 audioConfig.ts"""
     scenes_lines = []
     for r in results:
-        # 使用多行字符串确保正确的换行
         scene_block = f'''  {{
     id: "{r['id']}",
     title: "{r['title']}",
@@ -153,10 +179,9 @@ def update_config(results):
   }}'''
         scenes_lines.append(scene_block)
 
-    # 用真正的换行符连接，不要用 ",\\n".join()
     scenes_content = ",\n".join(scenes_lines)
 
-    content = f'''// 场景配置（MiniMax TTS 生成）
+    content = f'''// 场景配置（Qwen CosyVoice 生成）
 // 自动生成，请勿手动修改
 
 export interface SceneConfig {{

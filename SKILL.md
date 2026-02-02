@@ -16,6 +16,283 @@ description: |
 
 用 React 以编程方式创建 MP4 视频的框架。
 
+## 📚 详细规则文件索引
+
+根据具体需求，加载对应的规则文件获取详细代码示例：
+
+### 基础动画
+- [rules/animations.md](rules/animations.md) - 动画基础：必须使用 `useCurrentFrame()` 驱动
+- [rules/timing.md](rules/timing.md) - 时间插值：interpolate、spring、easing 曲线
+- [rules/sequencing.md](rules/sequencing.md) - 时间编排：延迟、裁剪、限制时长
+- [rules/trimming.md](rules/trimming.md) - 裁剪动画的开头或结尾
+- [rules/transitions.md](rules/transitions.md) - 场景过渡效果
+
+### 媒体资源
+- [rules/assets.md](rules/assets.md) - 导入图片、视频、音频、字体
+- [rules/images.md](rules/images.md) - 使用 `<Img>` 组件嵌入图片
+- [rules/videos.md](rules/videos.md) - 嵌入视频：裁剪、音量、速度、循环、音高
+- [rules/audio.md](rules/audio.md) - 音频处理：导入、裁剪、音量、速度、音高
+- [rules/fonts.md](rules/fonts.md) - 加载 Google Fonts 和本地字体
+- [rules/gifs.md](rules/gifs.md) - 与时间轴同步的 GIF 显示
+
+### 字幕与文字
+- [rules/subtitles.md](rules/subtitles.md) - 字幕和 Caption 概览
+- [rules/transcribe-captions.md](rules/transcribe-captions.md) - 转录音视频生成字幕
+- [rules/display-captions.md](rules/display-captions.md) - 显示字幕
+- [rules/import-srt-captions.md](rules/import-srt-captions.md) - 导入 SRT 字幕文件
+- [rules/text-animations.md](rules/text-animations.md) - 文字排版和动画
+- [rules/measuring-text.md](rules/measuring-text.md) - 测量文字尺寸、适配容器
+
+### 视觉效果
+- [rules/charts.md](rules/charts.md) - 图表和数据可视化
+- [rules/lottie.md](rules/lottie.md) - 嵌入 Lottie 动画
+- [rules/light-leaks.md](rules/light-leaks.md) - 光晕叠加效果
+- [rules/transparent-videos.md](rules/transparent-videos.md) - 渲染透明背景视频
+- [rules/maps.md](rules/maps.md) - 使用 Mapbox 添加地图并动画化
+
+### 3D 内容
+- [rules/3d.md](rules/3d.md) - 使用 Three.js 和 React Three Fiber 创建 3D 内容
+
+### Composition 配置
+- [rules/compositions.md](rules/compositions.md) - 定义 Composition、静态图、默认 props
+- [rules/calculate-metadata.md](rules/calculate-metadata.md) - 动态设置时长、尺寸、props
+- [rules/parameters.md](rules/parameters.md) - 使用 Zod Schema 参数化视频
+
+### 媒体信息工具 (Mediabunny)
+- [rules/get-audio-duration.md](rules/get-audio-duration.md) - 获取音频时长
+- [rules/get-video-duration.md](rules/get-video-duration.md) - 获取视频时长
+- [rules/get-video-dimensions.md](rules/get-video-dimensions.md) - 获取视频尺寸
+- [rules/can-decode.md](rules/can-decode.md) - 检查视频是否可解码
+- [rules/extract-frames.md](rules/extract-frames.md) - 从视频提取帧
+
+### 其他
+- [rules/tailwind.md](rules/tailwind.md) - 在 Remotion 中使用 TailwindCSS
+- [rules/measuring-dom-nodes.md](rules/measuring-dom-nodes.md) - 测量 DOM 元素尺寸
+
+---
+
+## 🎬 视频创作工作流（重要）
+
+### 工作流程概览
+
+```
+1. 需求收集 → 2. 文案创作（2-3方案）→ 3. 用户选择 → 4. 素材清单 → 5. 语音生成 → 6. 视频开发 → 7. 渲染
+```
+
+### 第一步：文案设计（最重要）
+
+**核心原则：每个场景必须有「声」有「画」**
+
+视频不是 PPT + 配音！每个场景需要同时设计：
+- **语音脚本**：讲什么
+- **视觉元素**：看什么（文字/图片/动画/视频片段）
+- **镜头感**：画面如何变化
+
+#### 场景设计模板
+
+```yaml
+场景 1: 开场
+  语音: "你有没有遇到过这样的情况..."
+  画面:
+    - 0-2秒: 黑屏 + 大字标题淡入
+    - 2-5秒: 问题场景的图片/视频
+    - 5-8秒: 主角人物或产品特写
+  动画: 标题弹入 + 图片缩放
+  素材需求: [问题场景图片, 主角图片]
+
+场景 2: 问题展示
+  语音: "手机突然开始疯狂闪退..."
+  画面:
+    - 手机屏幕录屏展示问题
+    - 或: 模拟的错误提示动画
+  动画: 红色警告框抖动
+  素材需求: [屏幕录屏.mp4] 或 [自制动画]
+```
+
+#### ⚠️ 素材确认检查点
+
+在开始开发前，**必须向用户确认**：
+1. 每个场景的素材是否齐全？
+2. 缺失的素材用户能否提供？
+3. 是否需要用动画/图表代替实拍素材？
+4. 用户对视觉风格有什么偏好？
+
+```
+提问模板：
+"我设计了以下场景，但有几处需要确认：
+1. 场景3需要一张产品截图，您能提供吗？
+2. 场景5的演示部分，您有屏幕录制吗？还是我用动画模拟？
+3. 整体风格偏科技感（深色背景）还是温馨感（浅色背景）？"
+```
+
+### 第二步：提供2-3个文案方案
+
+**在用户确认最终文案前，必须先提供多个方案供选择。**
+
+每个方案应该有不同的侧重：
+
+| 方案 | 风格 | 节奏 | 时长 | 适合场景 |
+|------|------|------|------|----------|
+| A | 快节奏 | 信息密集，画面切换快 | 1-2分钟 | 短视频平台、产品功能展示 |
+| B | 故事型 | 起承转合，情感递进 | 3-5分钟 | 个人故事、品牌宣传 |
+| C | 教程型 | 分步讲解，留白思考 | 5-10分钟 | 技术教程、知识科普 |
+
+#### 方案对比模板
+
+```markdown
+## 方案 A：「快节奏产品展示」（预计 90 秒）
+- 开场（10s）: 痛点问题一句话带过
+- 产品展示（60s）: 功能快速切换，每个功能 10 秒
+- 结尾（20s）: CTA 引导
+
+## 方案 B：「问题解决故事」（预计 3 分钟）
+- 开场（30s）: 详细描述遇到的问题，引发共鸣
+- 探索（60s）: 尝试的各种方案，一一失败
+- 转折（30s）: 发现关键线索
+- 解决（45s）: 最终方案和效果
+- 彩蛋（15s）: 意外收获或思考
+
+## 方案 C：「技术深度讲解」（预计 5 分钟）
+- 背景介绍（45s）
+- 概念解释 1（60s）
+- 概念解释 2（60s）
+- 实操演示（90s）
+- 总结回顾（45s）
+
+---
+请选择您倾向的方案，或者告诉我您想要的调整方向。
+```
+
+### 第三步：确认素材清单
+
+在用户选定方案后，输出素材清单：
+
+```markdown
+## 素材清单
+
+### 必须提供（用户准备）
+- [ ] 产品截图 (1920x1080) - 用于场景2
+- [ ] 屏幕录制.mp4 - 用于场景4演示
+- [ ] Logo.png (透明背景) - 片头片尾
+
+### 可选提供（有则更好）
+- [ ] 背景音乐.mp3
+- [ ] 真人出镜视频
+
+### 我来制作（动画/图表）
+- 时间线动画 - 场景3
+- 数据对比图表 - 场景5
+- 文字动效 - 全片
+
+请确认以上素材，我会在收到后开始开发。
+```
+
+---
+
+## 🔧 公共环境配置（一次配置，长期复用）
+
+为避免每次创建视频都重复安装依赖，建议配置公共环境：
+
+### Python 虚拟环境（TTS 脚本用）
+
+```bash
+# 创建公共虚拟环境（只需执行一次）
+python3 -m venv ~/.claude/envs/remotion-tts
+source ~/.claude/envs/remotion-tts/bin/activate
+
+# 安装所有 TTS 依赖
+pip install requests edge-tts dashscope
+
+# 验证安装
+pip list | grep -E "requests|edge-tts|dashscope"
+```
+
+**使用方式**：在脚本开头添加 shebang 或手动激活
+
+```python
+#!/Users/你的用户名/.claude/envs/remotion-tts/bin/python3
+# 或者在运行前：
+# source ~/.claude/envs/remotion-tts/bin/activate && python script.py
+```
+
+**⚠️ 每次运行 TTS 脚本前**，检查环境：
+```bash
+# 检查虚拟环境是否存在
+if [ -d ~/.claude/envs/remotion-tts ]; then
+    source ~/.claude/envs/remotion-tts/bin/activate
+else
+    echo "请先创建虚拟环境：python3 -m venv ~/.claude/envs/remotion-tts"
+fi
+```
+
+### Chrome Headless Shell（渲染用）
+
+Remotion 渲染需要 Chrome Headless Shell，首次下载较慢。配置缓存路径避免重复下载：
+
+```bash
+# 方式 1：设置环境变量指定缓存位置
+export REMOTION_CHROME_EXECUTABLE_PATH=~/.cache/remotion/chrome-headless-shell
+
+# 方式 2：在 remotion.config.ts 中配置
+# Config.setChromiumExecutable('/path/to/chrome-headless-shell');
+
+# 方式 3：检查已有的 Chrome 安装
+# macOS 通常在：
+# /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+# 可以设置 PUPPETEER_EXECUTABLE_PATH 指向它
+```
+
+**渲染前检查脚本** (scripts/check-env.sh)：
+
+```bash
+#!/bin/bash
+echo "🔍 检查 Remotion 渲染环境..."
+
+# 检查 Node.js
+if ! command -v node &> /dev/null; then
+    echo "❌ Node.js 未安装"
+    exit 1
+fi
+echo "✅ Node.js: $(node -v)"
+
+# 检查 Chrome Headless Shell 缓存
+CHROME_CACHE=~/.cache/remotion
+if [ -d "$CHROME_CACHE" ] && [ "$(ls -A $CHROME_CACHE 2>/dev/null)" ]; then
+    echo "✅ Chrome Headless Shell 已缓存"
+else
+    echo "⚠️  Chrome Headless Shell 未缓存，首次渲染会自动下载"
+fi
+
+# 检查 ffmpeg
+if ! command -v ffmpeg &> /dev/null; then
+    echo "❌ ffmpeg 未安装，请运行: brew install ffmpeg"
+    exit 1
+fi
+echo "✅ ffmpeg: $(ffmpeg -version | head -1)"
+
+echo ""
+echo "✅ 环境检查完成"
+```
+
+### package.json 推荐配置
+
+```json
+{
+  "scripts": {
+    "dev": "remotion studio",
+    "check-env": "bash scripts/check-env.sh",
+    "audio:minimax": "source ~/.claude/envs/remotion-tts/bin/activate && python scripts/generate_audio_minimax.py",
+    "audio:qwen": "source ~/.claude/envs/remotion-tts/bin/activate && python scripts/generate_audio_qwen.py",
+    "audio:edge": "source ~/.claude/envs/remotion-tts/bin/activate && python scripts/generate_audio_edge.py",
+    "render": "npx remotion render MainVideo out/video.mp4",
+    "render:preview": "npx remotion render MainVideo out/preview.mp4 --scale=0.5",
+    "build": "npm run check-env && npm run audio:minimax && npm run render"
+  }
+}
+```
+
+---
+
 ## 核心概念
 
 1. **Composition** - 视频的定义（尺寸、帧率、时长）
@@ -145,23 +422,60 @@ import { Sequence } from "remotion";
 
 ## AI 语音解说集成
 
-为视频添加 AI 语音解说，实现音视频同步。支持两种方案：
+为视频添加 AI 语音解说，实现音视频同步。支持三种方案：
 
-| 方案 | 优点 | 缺点 | 硬件要求 | 推荐度 |
-|------|------|------|----------|--------|
-| **MiniMax TTS** | 云端克隆、速度极快（<3秒）、音质优秀 | 按字符计费 | 无 | ⭐⭐⭐ 首选 |
-| **Edge TTS** | 零配置、免费 | 固定音色、无法自定义 | 无 | ⭐⭐ |
-
-### 方案选择流程
+### TTS 方案选择指南
 
 ```
-1. 首选 MiniMax TTS
-   - 检测 API Key 是否配置
-   - 测试调用是否正常（余额充足）
-   - 如果成功 → 使用 MiniMax
+用户需要语音配音
+      │
+      ▼
+┌─────────────────────────────────────┐
+│  询问用户：                          │
+│  1. 是否需要克隆特定音色？            │
+│  2. 是否有 API Key？                 │
+│  3. 预算情况？                       │
+└─────────────────────────────────────┘
+      │
+      ├── 需要克隆音色 ──────────────▶ MiniMax TTS（上传音频克隆）
+      │
+      ├── 有阿里云账号 + 中文 ───────▶ Qwen TTS（音质优秀，价格便宜）
+      │
+      ├── 无预算 / 快速测试 ─────────▶ Edge TTS（免费，固定音色）
+      │
+      └── 需要多语言 / 特殊需求 ─────▶ 询问用户偏好
+```
 
-2. MiniMax 不可用时
-   → 退回 Edge TTS（使用预设音色 zh-CN-YunyangNeural）
+### 方案对比表
+
+| 方案 | 优点 | 缺点 | 价格 | 推荐场景 |
+|------|------|------|------|----------|
+| **MiniMax TTS** | 音色克隆、速度快 | 按字符计费 | ¥0.05-0.1/千字 | 需要特定音色 |
+| **Qwen TTS** | 音质优秀、多种预置音色 | 需阿里云账号 | ¥0.02-0.04/千字 | 中文视频首选 |
+| **Edge TTS** | 免费、无需配置 | 固定音色 | 免费 | 快速测试 |
+
+### 首次配置（一次性）
+
+```bash
+# 创建公共 Python 环境
+python3 -m venv ~/.claude/envs/remotion-tts
+source ~/.claude/envs/remotion-tts/bin/activate
+pip install requests edge-tts dashscope
+
+# 验证
+pip list | grep -E "requests|edge-tts|dashscope"
+```
+
+### 使用流程
+
+```bash
+# 激活环境
+source ~/.claude/envs/remotion-tts/bin/activate
+
+# 选择一种方式运行
+python scripts/generate_audio_minimax.py  # 需要 MINIMAX_API_KEY
+python scripts/generate_audio_qwen.py     # 需要 DASHSCOPE_API_KEY
+python scripts/generate_audio_edge.py     # 免费
 ```
 
 ---
@@ -236,7 +550,68 @@ content = f'''export const SCENES = [
 
 ---
 
-## 方案二：Edge TTS
+## 方案二：Qwen TTS (CosyVoice)
+
+阿里云 DashScope 提供的 TTS 服务，音质优秀，支持多种中文音色。
+
+### 安装
+
+```bash
+pip install dashscope
+```
+
+### 配置
+
+1. 注册阿里云账号并开通 DashScope 服务：https://dashscope.console.aliyun.com/
+2. 获取 API Key：https://dashscope.console.aliyun.com/apiKey
+3. 设置环境变量：
+
+```bash
+export DASHSCOPE_API_KEY="your-api-key-here"
+export QWEN_VOICE="longfei"  # 可选，默认 longfei
+```
+
+### 可用音色
+
+| 音色 ID | 名称 | 风格 |
+|---------|------|------|
+| longfei | 龙飞 | 专业男声（推荐） |
+| longshu | 龙叔 | 成熟男声 |
+| longwan | 龙婉 | 知性女声 |
+| longxiaochun | 龙小淳 | 温柔女声 |
+| longxiaoxia | 龙小夏 | 甜美女声 |
+| longyue | 龙悦 | 活泼女声 |
+| longlaotie | 龙老铁 | 东北老铁 |
+| longjielidou | 龙杰力豆 | 活力男声 |
+
+完整音色列表：https://help.aliyun.com/zh/model-studio/developer-reference/cosyvoice-quick-start
+
+### 生成脚本
+
+使用 `scripts/generate_audio_qwen.py` 生成音频，支持：
+- **断点续作**：已存在的音频文件自动跳过
+- **实时进度**：显示生成进度
+- **自动更新配置**：生成完成后自动更新 Remotion 的场景配置
+
+```bash
+# 设置环境变量
+export DASHSCOPE_API_KEY="your_api_key"
+export QWEN_VOICE="longfei"  # 可选
+
+# 运行脚本
+python scripts/generate_audio_qwen.py
+```
+
+### 价格参考（2025年）
+
+| 模型 | 价格 |
+|------|------|
+| cosyvoice-v1 | ¥0.02/千字符 |
+| cosyvoice-v2 | ¥0.04/千字符 |
+
+---
+
+## 方案三：Edge TTS
 
 无需特殊硬件，完全免费，适合不需要克隆音色的场景。
 

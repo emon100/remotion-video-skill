@@ -8,10 +8,16 @@ Edge TTS 音频生成脚本
 - 自动获取音频时长
 
 用法：
-    python scripts/generate_audio_edge.py
+    # 推荐：使用公共虚拟环境
+    source ~/.claude/envs/remotion-tts/bin/activate && python scripts/generate_audio_edge.py
 
-依赖：
-    pip install edge-tts
+    # 或通过 npm script
+    npm run audio:edge
+
+首次配置公共环境：
+    python3 -m venv ~/.claude/envs/remotion-tts
+    source ~/.claude/envs/remotion-tts/bin/activate
+    pip install requests edge-tts dashscope
 """
 
 import asyncio
