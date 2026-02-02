@@ -2,14 +2,15 @@
 
 [中文文档](README_CN.md)
 
-A Claude Code Skill for creating programmatic videos with Remotion framework.
+A Claude Code Skill for creating programmatic videos with Remotion framework. This skill integrates official Remotion best practices with enhanced Chinese TTS support and a structured video creation workflow.
 
 ## Features
 
-- Create videos programmatically with React components
-- AI-powered TTS audio generation (MiniMax or Edge TTS)
-- Scene-based architecture with automatic timing
-- Support for animations, subtitles, and music visualization
+- **Structured Creation Workflow** - Scene design with audio + visuals + animations
+- **Multiple Script Proposals** - Generate 2-3 options with different styles/pacing
+- **AI-powered TTS** - MiniMax (voice cloning), Qwen (Chinese), Edge TTS (free)
+- **Official Rules Integration** - 30+ rules from [remotion-dev/skills](https://github.com/remotion-dev/skills)
+- **Reusable Environment** - Shared Python venv and Chrome cache
 
 ## Installation
 
@@ -23,82 +24,95 @@ cp -r remotion-video ~/.claude/skills/
 
 Then restart Claude Code or start a new session.
 
+### One-Time Environment Setup
+
+```bash
+# Create shared Python environment for TTS
+python3 -m venv ~/.claude/envs/remotion-tts
+source ~/.claude/envs/remotion-tts/bin/activate
+pip install requests edge-tts dashscope
+
+# Install system dependencies (macOS)
+brew install ffmpeg node
+```
+
 ### TTS Setup (Choose One)
 
-#### Option A: Edge TTS (Free, Recommended for Quick Start)
-
-No setup required! Edge TTS is free and works out of the box.
-
-Just install the Python dependency:
-```bash
-pip install edge-tts
-```
-
-#### Option B: MiniMax TTS (Paid, Voice Cloning Support)
-
-1. Get your API key from [MiniMax Platform](https://platform.minimaxi.com/)
-2. Set environment variables:
-
-```bash
-# Add to your ~/.zshrc or ~/.bashrc
-export MINIMAX_API_KEY="your-api-key-here"
-export MINIMAX_VOICE_ID="your-voice-id-here"
-```
-
-To get a Voice ID:
-- Use MiniMax's built-in voices, or
-- Clone your own voice on their platform
+| Provider | Setup | Pros | Pricing |
+|----------|-------|------|---------|
+| **Edge TTS** | None | Free, no API key | Free |
+| **Qwen TTS** | `DASHSCOPE_API_KEY` | Excellent Chinese | ¥0.02/1k chars |
+| **MiniMax** | `MINIMAX_API_KEY` + `MINIMAX_VOICE_ID` | Voice cloning | ¥0.05/1k chars |
 
 ## Usage
 
-After installation, trigger the skill by saying:
+Trigger the skill with:
 
-- "用代码做视频"
-- "编程视频"
-- "Remotion"
+- "用代码做视频" / "编程视频"
+- "Remotion" / "remotion"
 - "/remotion-video"
 
 ### Example Prompts
 
 **Tutorial Video:**
-> 帮我做一个讲解 Python 装饰器的教程视频，5分钟左右
+> 帮我做一个讲解 CNN 卷积神经网络的教程视频，5分钟左右
+
+**Personal Story:**
+> 帮我把这个经历做成一个短视频，我来提供截图
 
 **Data Visualization:**
 > 用 Remotion 做一个展示2024年销售数据的动画视频
 
-**Music Visualization:**
-> 帮我做一个音乐可视化视频，配合这首歌的节奏
-
-## Project Structure
-
-When the skill creates a new project:
+## Skill Structure
 
 ```
-my-video-project/
-├── src/
-│   ├── Root.tsx           # Main composition
-│   ├── audioConfig.ts     # Scene timing (auto-generated)
-│   └── scenes/            # Scene components
-├── public/
-│   └── audio/             # TTS audio files
-├── scripts/
-│   └── generate_audio.py  # TTS generation script
-└── package.json
+remotion-video/
+├── SKILL.md           # Main skill document (workflow + reference)
+├── rules/             # Official Remotion rules (30+ files)
+│   ├── animations.md
+│   ├── timing.md
+│   ├── audio.md
+│   └── ...
+├── scripts/           # TTS generation scripts
+│   ├── generate_audio_minimax.py
+│   ├── generate_audio_qwen.py
+│   ├── generate_audio_edge.py
+│   └── check-env.sh
+└── templates/
+    └── audioConfig.ts
 ```
+
+## Rules Reference
+
+Key rules files for common tasks:
+
+| Task | Rule File |
+|------|-----------|
+| Animations | `rules/animations.md`, `rules/timing.md` |
+| Video/Audio | `rules/videos.md`, `rules/audio.md` |
+| Subtitles | `rules/subtitles.md`, `rules/display-captions.md` |
+| 3D Content | `rules/3d.md` |
+| Transitions | `rules/transitions.md` |
+| Charts | `rules/charts.md` |
 
 ## Requirements
 
 - Node.js 18+
-- Python 3.8+ (for TTS)
-- ffprobe (for audio duration detection)
+- Python 3.8+
+- ffmpeg/ffprobe
 
 ```bash
 # macOS
-brew install ffmpeg
+brew install ffmpeg node
 
 # Ubuntu/Debian
-sudo apt install ffmpeg
+sudo apt install ffmpeg nodejs
 ```
+
+## Credits
+
+- Official rules from [remotion-dev/skills](https://github.com/remotion-dev/skills)
+- Remotion framework by [Remotion](https://remotion.dev)
 
 ## License
 
