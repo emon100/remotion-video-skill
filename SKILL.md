@@ -189,89 +189,32 @@ description: |
 
 ---
 
-## 🔧 公共环境配置（一次配置，长期复用）
+## 🔧 环境配置
 
-为避免每次创建视频都重复安装依赖，建议配置公共环境：
-
-### Python 虚拟环境（TTS 脚本用）
+### 系统依赖
 
 ```bash
-# 创建公共虚拟环境（只需执行一次）
-python3 -m venv ~/.claude/envs/remotion-tts
-source ~/.claude/envs/remotion-tts/bin/activate
+# macOS
+brew install node ffmpeg
 
-# 安装所有 TTS 依赖
-pip install requests edge-tts dashscope
-
-# 验证安装
-pip list | grep -E "requests|edge-tts|dashscope"
+# Ubuntu/Debian
+sudo apt install nodejs ffmpeg
 ```
 
-**使用方式**：在脚本开头添加 shebang 或手动激活
+### TTS 依赖（Edge TTS 免费版需要）
 
-```python
-#!/Users/你的用户名/.claude/envs/remotion-tts/bin/python3
-# 或者在运行前：
-# source ~/.claude/envs/remotion-tts/bin/activate && python script.py
-```
-
-**⚠️ 每次运行 TTS 脚本前**，检查环境：
 ```bash
-# 检查虚拟环境是否存在
-if [ -d ~/.claude/envs/remotion-tts ]; then
-    source ~/.claude/envs/remotion-tts/bin/activate
-else
-    echo "请先创建虚拟环境：python3 -m venv ~/.claude/envs/remotion-tts"
-fi
+# 在项目目录下安装
+npm install msedge-tts
 ```
 
 ### Chrome Headless Shell（渲染用）
 
-Remotion 渲染需要 Chrome Headless Shell，首次下载较慢。配置缓存路径避免重复下载：
+Remotion 渲染需要 Chrome Headless Shell，首次会自动下载。可通过环境变量配置：
 
 ```bash
-# 方式 1：设置环境变量指定缓存位置
-export REMOTION_CHROME_EXECUTABLE_PATH=~/.cache/remotion/chrome-headless-shell
-
-# 方式 2：在 remotion.config.ts 中配置
-# Config.setChromiumExecutable('/path/to/chrome-headless-shell');
-
-# 方式 3：检查已有的 Chrome 安装
-# macOS 通常在：
-# /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-# 可以设置 PUPPETEER_EXECUTABLE_PATH 指向它
-```
-
-**渲染前检查脚本** (scripts/check-env.sh)：
-
-```bash
-#!/bin/bash
-echo "🔍 检查 Remotion 渲染环境..."
-
-# 检查 Node.js
-if ! command -v node &> /dev/null; then
-    echo "❌ Node.js 未安装"
-    exit 1
-fi
-echo "✅ Node.js: $(node -v)"
-
-# 检查 Chrome Headless Shell 缓存
-CHROME_CACHE=~/.cache/remotion
-if [ -d "$CHROME_CACHE" ] && [ "$(ls -A $CHROME_CACHE 2>/dev/null)" ]; then
-    echo "✅ Chrome Headless Shell 已缓存"
-else
-    echo "⚠️  Chrome Headless Shell 未缓存，首次渲染会自动下载"
-fi
-
-# 检查 ffmpeg
-if ! command -v ffmpeg &> /dev/null; then
-    echo "❌ ffmpeg 未安装，请运行: brew install ffmpeg"
-    exit 1
-fi
-echo "✅ ffmpeg: $(ffmpeg -version | head -1)"
-
-echo ""
-echo "✅ 环境检查完成"
+# 使用系统 Chrome（推荐，避免重复下载）
+export PUPPETEER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 ```
 
 ### package.json 推荐配置
@@ -280,13 +223,10 @@ echo "✅ 环境检查完成"
 {
   "scripts": {
     "dev": "remotion studio",
-    "check-env": "bash scripts/check-env.sh",
-    "audio:minimax": "source ~/.claude/envs/remotion-tts/bin/activate && python scripts/generate_audio_minimax.py",
-    "audio:qwen": "source ~/.claude/envs/remotion-tts/bin/activate && python scripts/generate_audio_qwen.py",
-    "audio:edge": "source ~/.claude/envs/remotion-tts/bin/activate && python scripts/generate_audio_edge.py",
+    "audio": "npx ts-node scripts/generate-audio.ts",
+    "audio:edge": "npx ts-node scripts/generate-audio.ts -p edge",
     "render": "npx remotion render MainVideo out/video.mp4",
-    "render:preview": "npx remotion render MainVideo out/preview.mp4 --scale=0.5",
-    "build": "npm run check-env && npm run audio:minimax && npm run render"
+    "check-env": "bash scripts/check-env.sh"
   }
 }
 ```
@@ -454,124 +394,67 @@ import { Sequence } from "remotion";
 | **Qwen TTS** | 音质优秀、多种预置音色 | 需阿里云账号 | ¥0.02-0.04/千字 | 中文视频首选 |
 | **Edge TTS** | 免费、无需配置 | 固定音色 | 免费 | 快速测试 |
 
-### 首次配置（一次性）
+### 首次配置
 
 ```bash
-# 创建公共 Python 环境
-python3 -m venv ~/.claude/envs/remotion-tts
-source ~/.claude/envs/remotion-tts/bin/activate
-pip install requests edge-tts dashscope
+# Edge TTS 需要安装 npm 包（免费）
+npm install msedge-tts
 
-# 验证
-pip list | grep -E "requests|edge-tts|dashscope"
+# 付费方案只需设置环境变量
+export MINIMAX_API_KEY="..."
+export MINIMAX_VOICE_ID="..."
+# 或
+export DASHSCOPE_API_KEY="..."
 ```
 
 ### 使用流程
 
 ```bash
-# 激活环境
-source ~/.claude/envs/remotion-tts/bin/activate
+# 自动选择可用的 TTS 提供商
+npx ts-node scripts/generate-audio.ts
 
-# 选择一种方式运行
-python scripts/generate_audio_minimax.py  # 需要 MINIMAX_API_KEY
-python scripts/generate_audio_qwen.py     # 需要 DASHSCOPE_API_KEY
-python scripts/generate_audio_edge.py     # 免费
+# 指定提供商
+npx ts-node scripts/generate-audio.ts --provider edge    # 免费
+npx ts-node scripts/generate-audio.ts --provider qwen    # 需要 API Key
+npx ts-node scripts/generate-audio.ts --provider minimax # 需要 API Key
+
+# 设置重试次数（默认 3 次）
+npx ts-node scripts/generate-audio.ts --retries 5
 ```
 
 ---
 
-## 方案一：MiniMax TTS（推荐）
+## TTS 提供商详情
 
-云端 API 方案，无需本地 GPU，生成速度极快，音色克隆效果优秀。
+### MiniMax TTS（推荐，支持音色克隆）
 
-### 配置
-
-1. 注册 https://www.minimax.io （国际版）或 https://platform.minimaxi.com （国内版）
-2. 获取 API Key
-3. 在 MiniMax Audio 上传音频克隆音色，获取 voice_id
-
-### API 差异
-
-| 版本 | API 域名 | 说明 |
-|------|----------|------|
-| 国际版 | `api.minimax.io` | 推荐，稳定 |
-| 国内版 | `api.minimaxi.com` | 需国内账号 |
-
-**⚠️ 常见错误**：`api.minimax.chat` 是**错误的域名**，会返回 "invalid api key"。请确认使用上表中的正确域名。
-
-### 生成脚本
-
-使用 `scripts/generate_audio_minimax.py` 生成音频，支持：
-- **断点续作**：已存在的音频文件自动跳过
-- **实时进度**：显示生成进度，避免茫然等待
-- **自动更新配置**：生成完成后自动更新 Remotion 的场景配置
-
-```bash
-# 设置环境变量
-export MINIMAX_API_KEY="your_api_key"
-export MINIMAX_VOICE_ID="your_voice_id"
-
-# 运行脚本
-python scripts/generate_audio_minimax.py
-```
-
-### 价格参考（2025年）
-
-| 模型 | 价格 |
-|------|------|
-| speech-02-hd | ¥0.1/千字符 |
-| speech-02-turbo | ¥0.05/千字符 |
-
-### ⚠️ MiniMax TTS 踩坑经验
-
-| 问题 | 原因 | 解决方案 |
-|------|------|----------|
-| `invalid api key` | 使用了错误的 API 域名 | 国际版用 `api.minimax.io`，国内版用 `api.minimaxi.com` |
-| config.ts 语法错误 `Syntax error "n"` | Python 脚本在 f-string 中用 `",\\n".join()` 产生了字面量 `\n` 而非真正换行 | 见下方「Python 生成 TypeScript 注意事项」 |
-| 长时间无进度显示 | 后台执行命令看不到输出 | 前台执行脚本，或用 `tail -f` 实时查看日志 |
-
-### Python 生成 TypeScript 注意事项
-
-**❌ 错误写法**：在 f-string 中使用 `\n` 会产生字面量字符
-```python
-# 这会在生成的文件中写入字面的 \n 字符串，而非换行！
-content = f'export const SCENES = [{",\\n".join(items)}];'
-```
-
-**✅ 正确写法**：分开处理字符串拼接
-```python
-# 先用真正的换行符拼接
-scenes_content = ",\n".join(items)  # 在 f-string 外部拼接
-# 再放入模板
-content = f'''export const SCENES = [
-{scenes_content}
-];'''
-```
-
----
-
-## 方案二：Qwen TTS (CosyVoice)
-
-阿里云 DashScope 提供的 TTS 服务，音质优秀，支持多种中文音色。
-
-### 安装
-
-```bash
-pip install dashscope
-```
-
-### 配置
-
-1. 注册阿里云账号并开通 DashScope 服务：https://dashscope.console.aliyun.com/
-2. 获取 API Key：https://dashscope.console.aliyun.com/apiKey
+1. 注册 https://www.minimax.io（国际版）或 https://platform.minimaxi.com（国内版）
+2. 获取 API Key 和 Voice ID
 3. 设置环境变量：
 
 ```bash
-export DASHSCOPE_API_KEY="your-api-key-here"
-export QWEN_VOICE="longfei"  # 可选，默认 longfei
+export MINIMAX_API_KEY="your_api_key"
+export MINIMAX_VOICE_ID="your_voice_id"
 ```
 
-### 可用音色
+**API 域名**：国际版 `api.minimax.io`，国内版 `api.minimaxi.com`
+
+**价格**：¥0.05-0.1/千字符
+
+---
+
+### Qwen TTS (CosyVoice)
+
+1. 注册阿里云 DashScope：https://dashscope.console.aliyun.com/
+2. 获取 API Key
+3. 设置环境变量：
+
+```bash
+export DASHSCOPE_API_KEY="your_api_key"
+export QWEN_VOICE="longfei"  # 可选
+```
+
+**可用音色**：
 
 | 音色 ID | 名称 | 风格 |
 |---------|------|------|
@@ -579,49 +462,20 @@ export QWEN_VOICE="longfei"  # 可选，默认 longfei
 | longshu | 龙叔 | 成熟男声 |
 | longwan | 龙婉 | 知性女声 |
 | longxiaochun | 龙小淳 | 温柔女声 |
-| longxiaoxia | 龙小夏 | 甜美女声 |
-| longyue | 龙悦 | 活泼女声 |
-| longlaotie | 龙老铁 | 东北老铁 |
-| longjielidou | 龙杰力豆 | 活力男声 |
 
-完整音色列表：https://help.aliyun.com/zh/model-studio/developer-reference/cosyvoice-quick-start
-
-### 生成脚本
-
-使用 `scripts/generate_audio_qwen.py` 生成音频，支持：
-- **断点续作**：已存在的音频文件自动跳过
-- **实时进度**：显示生成进度
-- **自动更新配置**：生成完成后自动更新 Remotion 的场景配置
-
-```bash
-# 设置环境变量
-export DASHSCOPE_API_KEY="your_api_key"
-export QWEN_VOICE="longfei"  # 可选
-
-# 运行脚本
-python scripts/generate_audio_qwen.py
-```
-
-### 价格参考（2025年）
-
-| 模型 | 价格 |
-|------|------|
-| cosyvoice-v1 | ¥0.02/千字符 |
-| cosyvoice-v2 | ¥0.04/千字符 |
+**价格**：¥0.02-0.04/千字符
 
 ---
 
-## 方案三：Edge TTS
+### Edge TTS（免费）
 
-无需特殊硬件，完全免费，适合不需要克隆音色的场景。
-
-### 安装
+无需 API Key，需要安装 npm 包：
 
 ```bash
-pip install edge-tts
+npm install msedge-tts
 ```
 
-### 推荐语音
+**可用音色**：
 
 | 语音 ID | 名称 | 风格 |
 |---------|------|------|
@@ -629,13 +483,7 @@ pip install edge-tts
 | zh-CN-XiaoxiaoNeural | 晓晓 | 温暖自然 |
 | zh-CN-YunxiNeural | 云希 | 阳光少年 |
 
-### 生成脚本
-
-使用 `scripts/generate_audio_edge.py` 生成音频：
-
-```bash
-python scripts/generate_audio_edge.py
-```
+设置音色：`export EDGE_VOICE="zh-CN-YunyangNeural"`
 
 ### Remotion 音频同步
 
